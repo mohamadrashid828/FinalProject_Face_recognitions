@@ -3,12 +3,20 @@ import cv2 as cv2
 import os
 import time
 import numpy as np
+import pickle
+from cvzone.FaceDetectionModule import FaceDetector
+from keras_facenet import FaceNet
+from sklearn.preprocessing import LabelEncoder
+
 class ModelRecognitionAndDtection1:
-    def __init__(self,_recognition_moddel,_detetion_model,_desiosion_model,_path_data_images):
-        self.recognition_moddel=_recognition_moddel
-        self.detetion_model = _detetion_model
-        self.desiosion_model = _desiosion_model
+    def __init__(self,_path_data_images):
+        self.recognition_moddel=FaceNet()
+        self.detetion_model = FaceDetector(minDetectionCon=0.3, modelSelection=1)
+        self.SVM_disesion = pickle.load(open(r'C:\Users\moham\PycharmProjects\FinalProject_Face_recognitions\Moldels\model_SVM.pkl', 'rb'))
         self.path_data_images = _path_data_images
+        emmbeading_model = np.load(r"..\Moldels\Model1.npz")
+        y = emmbeading_model['arr_1']
+        self.encoder = LabelEncoder().fit(y)
     def face_detection(self,frame):
         ####################################variables
         floating_point = 5
@@ -71,8 +79,13 @@ class ModelRecognitionAndDtection1:
                 #                        (x, y - 10), scale=1, thickness=1)
         return all_facees
 
-    def face_recognition(self,image):
-        pass
+    def face_recognition(self,face):
+        ypred=self.recognition_moddel.embeddings(face)
+        face_name =self.SVM_disesion.predict(ypred)
+        popabilty = self.SVM_disesion.predict_proba(ypred)
+        final_naem = self.encoder.inverse_transform(face_name)
+        return (final_naem,max(popabilty[0]))
+
     def split_date_test_and_train(self):
         pass
     def take_a_sample_from_vidio(self, video_path):
